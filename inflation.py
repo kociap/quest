@@ -25,8 +25,3 @@ def exponential_moving_average(data: list):
         denominator += coeff
         coeff *= alpha
     return sum/denominator
-
-data = [3,2,1]
-print(weighted_moving_average(data))
-print(exponential_moving_average(data))
-print(linear_regression(data))
