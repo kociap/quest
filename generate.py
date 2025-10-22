@@ -71,7 +71,7 @@ for day in range(0, args.order_frequency * args.orders):
   anomaly = 1 - random.random() <= 1 / args.error_frequency
   anomalies = random_anomalies() if anomaly else ()
   order_count, order_price = calculate_order(count, price, anomalies)
-  print(f"{order},0,{order_count},{order_price:.2f}")
+  print(f"{order},0,{order_count},{order_price:.2f},{1 if anomaly else 0}")
 
   order += 1
 
