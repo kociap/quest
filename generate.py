@@ -9,13 +9,15 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("orders", type = int,
   help = "the total number of orders to generate.")
+parser.add_argument("--disable-errors", type = bool, default = False,
+  help = "disable generation of random errors.")
 parser.add_argument("--error-frequency", type = int, default = 1000,
   help = """the frequency of data anomalies. The probability of an anomaly
             occurring is 1/frequency.""")
 parser.add_argument("--price", type = float, default = 1.0,
   help = "the base price of the product.")
 parser.add_argument("--inflation", type = float, default = 1.0,
-  help = "the inflation rate in %%.")
+  help = "the inflation rate in %% per annum.")
 parser.add_argument("--count-mean", type = int, default = 1,
   help = "the average size of the order.")
 parser.add_argument("--count-range", type = int, default = 1,
@@ -60,16 +62,19 @@ def calculate_order(count, price, anomalies):
 
 order = 1
 price = args.price
-inflation = args.inflation
+inflation_frequency = 30
+# periodic_inflation = (1 + annual_inflation) ^ (1 / periods_per_year) - 1
+inflation = pow(1 + args.inflation / 100, 1 / (365 / inflation_frequency)) - 1
+print(inflation, file = sys.stderr)
 for day in range(0, args.order_frequency * args.orders):
-  # Inflate prices once per week.
-  if day % 7 == 6:
-    price += price * ((inflation / 100) * 7 / 365)
+  # Inflate prices once per period.
+  if day % inflation_frequency == inflation_frequency - 1:
+    price += price * inflation
 
   count = int(random.normalvariate(args.count_mean, args.count_range))
 
   anomaly = 1 - random.random() <= 1 / args.error_frequency
-  anomalies = random_anomalies() if anomaly else ()
+  anomalies = random_anomalies() if anomaly and not args.disable_errors else ()
   order_count, order_price = calculate_order(count, price, anomalies)
   print(f"{order},0,{order_count},{order_price:.2f},{1 if anomaly else 0}")
 
