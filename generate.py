@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("orders", type = int,
   help = "the total number of orders to generate.")
-parser.add_argument("--disable-errors", type = bool, default = False,
+parser.add_argument("--disable-errors", action = "store_true", default = False,
   help = "disable generation of random errors.")
 parser.add_argument("--error-frequency", type = int, default = 1000,
   help = """the frequency of data anomalies. The probability of an anomaly
@@ -65,7 +65,6 @@ price = args.price
 inflation_frequency = 30
 # periodic_inflation = (1 + annual_inflation) ^ (1 / periods_per_year) - 1
 inflation = pow(1 + args.inflation / 100, 1 / (365 / inflation_frequency)) - 1
-print(inflation, file = sys.stderr)
 for day in range(0, args.order_frequency * args.orders):
   # Inflate prices once per period.
   if day % inflation_frequency == inflation_frequency - 1:
