@@ -12,10 +12,12 @@ pd.set_option('display.max_rows', None)
 avg_simple = SimpleAverage()
 avg_weighted = WeightedMovingAverage()
 avg_exponential = ExponentialMovingAverage(0.1)
+avg_simple_moving = SimpleMovingAverage(50)
 results = []
 results.append(anomaly_clearing(list(data['price']),avg_simple))
 results.append(anomaly_clearing(list(data['price']),avg_weighted))
 results.append(anomaly_clearing(list(data['price']),avg_exponential))
+results.append(anomaly_clearing(list(data['price']),avg_simple_moving))
 anomalies = data['flag']
 for idx in range(len(anomalies)):
     miss_flag = False
@@ -23,4 +25,4 @@ for idx in range(len(anomalies)):
         if result[idx][1] != anomalies[idx]:
             miss_flag = True
     if miss_flag:
-        print(f"{results[0][idx]} , {results[1][idx]} , {results[2][idx]} , {anomalies[idx]} , {idx}")
+        print(f"{results[0][idx]} , {results[1][idx]} , {results[2][idx]} , {results[3][idx]} , {anomalies[idx]} , {idx}")

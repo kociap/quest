@@ -1,5 +1,6 @@
 # from sklearn.linear_model import LinearRegression
 import math
+from collections import deque
 from IAverage import IAverage
 
 class ExponentialMovingAverage(IAverage):
@@ -51,6 +52,39 @@ class WeightedMovingAverage(IAverage):
         self.sum_sq = 0
         self.counter = 0
 
+class SimpleMovingAverage:
+    def __init__(self, N):
+        self.N = N
+        self.reset()
+
+    def add_value(self, value):
+        if len(self.values) == self.N:
+            removed = self.values.popleft()
+            self.sum -= removed
+            self.sum_sq -= removed**2
+
+        self.values.append(value)
+        self.sum += value
+        self.sum_sq += value**2
+
+    def get_average(self):
+        if not self.values:
+            return 0.0
+        return self.sum / len(self.values)
+
+    def get_variance(self):
+        n = len(self.values)
+        if n < 2:
+            return 0.0
+        mean = self.get_average()
+        # Bessel correction
+        return (self.sum_sq / n - mean**2) * n / (n - 1)
+
+    def reset(self):
+        self.values = deque()
+        self.sum = 0.0
+        self.sum_sq = 0.0
+
 class SimpleAverage(IAverage):
     def __init__(self):
         self.reset()
@@ -68,7 +102,7 @@ class SimpleAverage(IAverage):
     def get_variance(self):
         if self.counter < 2:
             return 0.0
-        return self.avg_sq / (self.counter - 1)  # korekta Bessela 
+        return self.avg_sq / (self.counter - 1) # Bessel correction
 
     def reset(self):
         self.counter = 0
@@ -91,11 +125,8 @@ def anomaly_clearing(data: list, avg: IAverage):
                     avg.add_value(result[idx+i][0])
                 i -= 1                
             if abs(x[0]-avg.get_average())>=math.sqrt(10*avg.get_variance()):
-                # print("\n\n\n\n\n\n")
-                # print(x[0],avg.get_average(),avg.get_variance())
                 x[1]=True
                 anomaly = True
-        # print(anomaly, result)
         if not anomaly:
             break
     return result
