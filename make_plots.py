@@ -1,4 +1,4 @@
-from statistics import *
+from my_statistics import *
 
 import pandas as pd
 import numpy as np

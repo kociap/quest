@@ -1,0 +1,26 @@
+from my_statistics import *
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("example.csv",encoding="utf-16")
+
+data['draw_price'] = data['price'].clip(upper = 130)
+# data['draw_price'] = data['price']
+pd.set_option('display.max_rows', None)
+avg_simple = SimpleAverage()
+avg_weighted = WeightedMovingAverage()
+avg_exponential = ExponentialMovingAverage(0.1)
+results = []
+results.append(anomaly_clearing(list(data['price']),avg_simple))
+results.append(anomaly_clearing(list(data['price']),avg_weighted))
+results.append(anomaly_clearing(list(data['price']),avg_exponential))
+anomalies = data['flag']
+for idx in range(len(anomalies)):
+    miss_flag = False
+    for result in results:
+        if result[idx][1] != anomalies[idx]:
+            miss_flag = True
+    if miss_flag:
+        print(f"{results[0][idx]} , {results[1][idx]} , {results[2][idx]} , {anomalies[idx]} , {idx}")
