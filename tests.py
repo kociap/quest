@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from my_isolation_forest import AnomalyDetector
 
-data = pd.read_csv("example.csv",encoding="utf-16")
+data = pd.read_csv("example.csv")
 
 data['draw_price'] = data['price'].clip(upper = 130)
 # data['draw_price'] = data['price']
