@@ -1,7 +1,9 @@
 # from sklearn.linear_model import LinearRegression
 import math
+import copy
 from collections import deque
 from IAverage import IAverage
+from inequalities import *
 
 class ExponentialMovingAverage(IAverage):
     def __init__(self, alpha):
@@ -28,36 +30,33 @@ class ExponentialMovingAverage(IAverage):
 
 class WeightedMovingAverage(IAverage):
     def __init__(self, N):
-        self.values = []
+        self.reset()
         self.N = N
 
     def add_value(self, value):
         if len(self.values) >= self.N:
             self.values = self.values[1:]
         self.values.append(value)
-        if self.counter == 0:
-            self.avg = value
-            self.avg_sq = value ** 2
-            self.var = 0.0
-            self.counter += 1
-        else:
-            self.counter += 1
-            self.sum += self.counter * value
-            self.sum_sq += self.counter * value**2
 
     def get_average(self):
-        summed = sum([weight * value for weight, value in enumerate(self.values)])
         count = len(self.values)
+        if count == 0:
+            return 0.0
+        summed = sum([weight * value for weight, value in enumerate(self.values, start=1)])
         return 2 * summed / (count * (count + 1))
 
     def get_variance(self):
-        mean = self.get_average()
-        squares = sum([weight * value * value for weight, value in enumerate(self.values)])
         count = len(self.values)
-        return 2 * squares / (count * (count + 1)) - squares * squares
+        if count <= 1:
+            return 0.0
+        mean = self.get_average()
+        squares = sum([weight * value ** 2 for weight, value in enumerate(self.values, start=1)])
+        return 2 * squares / (count * (count + 1)) - (mean ** 2)
 
     def reset(self):
         self.values = []
+        self.sum = 0.0
+        self.sum_sq = 0.0
 
 class SimpleMovingAverage:
     def __init__(self, N):
@@ -137,3 +136,45 @@ def anomaly_clearing(data: list, avg: IAverage, inequality, confidence):
         if not anomaly:
             break
     return result
+
+def f1(result, anomalies):
+    tp = 0
+    fp = 0
+    fn = 0
+    tn = 0
+    for (r,a) in zip(result,anomalies):
+        if r == True and a == 1:
+            tp += 1
+        if r == True and a == 0:
+            fp += 1
+        if r == False and a == 1:
+            fn += 1
+        if r == False and a == 0:
+            tn += 1
+    if (tp + fp) == 0 or (tp + fn) == 0:
+        return (0,0,0)
+    precision = tp/(tp+fp)
+    recall = tp/(tp+fn)
+    f1 = 2 / (1/recall + 1/precision)
+    return (precision,recall,f1)
+
+def inequality_prediction(train_data, test_data, avg: IAverage, inequality, confidence):
+    clean_train_data_by_price = anomaly_clearing(train_data['price'].values.tolist(),avg,inequality,confidence)
+    clean_train_data_by_count = anomaly_clearing(train_data['count'].values.tolist(),avg,inequality,confidence)
+    clean_train_data = [[data_1[0],data_2[0]] for data_1,data_2 in zip(clean_train_data_by_price,clean_train_data_by_count) if not data_1[1] and not data_2[1]]
+    result = []
+    avg.reset()
+    avg_count = copy.deepcopy(avg)
+    for data in clean_train_data:
+        avg.add_value(data[0])
+        avg_count.add_value(data[1])
+    for idx, data in test_data.iterrows():
+        if inequality(data['price'],avg.get_average(),avg.get_variance()) <= confidence:
+            result.append(True)
+        elif inequality(data['count'],avg_count.get_average(),avg_count.get_variance()) <= confidence:
+            result.append(True)
+        else:
+            result.append(False)
+    # print(result)
+    return f1(result,test_data['flag'])
+

@@ -7,6 +7,8 @@ from scipy.stats import norm
 # "Jakie maksymalnie jest prawdopodobieństwo, że osiądnięto co najmniej takie odchylenie?"
 def confidence_czebyszew(value, avg, var):
     k = abs(value - avg) / math.sqrt(var)
+    if k == 0:
+        return 1
     return 1 / (k*k)
 
 # Nierówność Chernoffa
