@@ -6,8 +6,8 @@ from IAverage import IAverage
 class ExponentialMovingAverage(IAverage):
     def __init__(self, alpha):
         self.alpha = alpha
-        self.reset()     
-        
+        self.reset()
+
     def add_value(self, value):
         if self.avg is None:
             self.avg = value
@@ -15,22 +15,26 @@ class ExponentialMovingAverage(IAverage):
         else:
             self.avg = self.alpha * value + (1 - self.alpha) * self.avg
             self.avg_sq = self.alpha * (value ** 2) + (1 - self.alpha) * self.avg_sq
-    
+
     def get_average(self):
         return self.avg
-    
+
     def get_variance(self):
         return self.avg_sq - (self.avg ** 2)
-    
+
     def reset(self):
         self.avg = None
-        self.avg_sq = None     
+        self.avg_sq = None
 
 class WeightedMovingAverage(IAverage):
-    def __init__(self):
-        self.reset()
+    def __init__(self, N):
+        self.values = []
+        self.N = N
 
     def add_value(self, value):
+        if len(self.values) >= self.N:
+            self.values = self.values[1:]
+        self.values.append(value)
         if self.counter == 0:
             self.avg = value
             self.avg_sq = value ** 2
@@ -40,17 +44,20 @@ class WeightedMovingAverage(IAverage):
             self.counter += 1
             self.sum += self.counter * value
             self.sum_sq += self.counter * value**2
-    
+
     def get_average(self):
-        return self.sum/(((self.counter+1)*self.counter)/2)
-    
+        summed = sum([weight * value for weight, value in enumerate(self.values)])
+        count = len(self.values)
+        return 2 * summed / (count * (count + 1))
+
     def get_variance(self):
-        return self.sum_sq/(((self.counter+1)*self.counter)/2) - (self.sum/(((self.counter+1)*self.counter)/2))**2
-    
+        mean = self.get_average()
+        squares = sum([weight * value * value for weight, value in enumerate(self.values)])
+        count = len(self.values)
+        return 2 * squares / (count * (count + 1)) - squares * squares
+
     def reset(self):
-        self.sum = 0
-        self.sum_sq = 0
-        self.counter = 0
+        self.values = []
 
 class SimpleMovingAverage:
     def __init__(self, N):
@@ -123,7 +130,7 @@ def anomaly_clearing(data: list, avg: IAverage):
                     avg.add_value(result[idx-i][0])
                 if (idx+i<len(result)) and not result[idx+i][1]:
                     avg.add_value(result[idx+i][0])
-                i -= 1                
+                i -= 1
             if abs(x[0]-avg.get_average())>=math.sqrt(10*avg.get_variance()):
                 x[1]=True
                 anomaly = True

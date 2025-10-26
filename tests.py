@@ -13,7 +13,7 @@ pd.set_option('display.max_rows', None)
 detector = AnomalyDetector(contamination=0.1)
 clean_data = detector.fit_and_flag(data['price'])
 avg_simple = SimpleAverage()
-avg_weighted = WeightedMovingAverage()
+avg_weighted = WeightedMovingAverage(50)
 avg_exponential = ExponentialMovingAverage(0.1)
 avg_simple_moving = SimpleMovingAverage(50)
 results = []
