@@ -116,7 +116,7 @@ class SimpleAverage(IAverage):
         self.avg = 0.0
         self.avg_sq = 0.0
 
-def anomaly_clearing(data: list, avg: IAverage):
+def anomaly_clearing(data: list, avg: IAverage, inequality, confidence):
     result = [[d,False] for d in data]
     while True:
         anomaly = False
@@ -131,7 +131,7 @@ def anomaly_clearing(data: list, avg: IAverage):
                 if (idx+i<len(result)) and not result[idx+i][1]:
                     avg.add_value(result[idx+i][0])
                 i -= 1
-            if abs(x[0]-avg.get_average())>=math.sqrt(10*avg.get_variance()):
+            if inequality(x[0], avg.get_average(), avg.get_variance()) <= confidence:
                 x[1]=True
                 anomaly = True
         if not anomaly:
